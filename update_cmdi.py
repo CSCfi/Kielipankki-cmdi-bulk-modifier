@@ -2,6 +2,8 @@ import click
 import lxml
 from sickle import Sickle
 
+from modifiers.lb_modifiers import FinclarinPersonToOrganizationModifier
+
 
 class UploadError(Exception):
     """
@@ -29,7 +31,7 @@ def selected_modifiers(click_context):
     Return a list of modifiers the user has selected using flags.
     """
     # TODO really parse from arguments
-    return [finclarin_person_enhancer]
+    return [FinclarinPersonToOrganizationModifier]
 
 
 def replace_record(pid, session_id, record):
@@ -37,48 +39,6 @@ def replace_record(pid, session_id, record):
     Delete old record and reupload with updated data.
     """
     raise UploadError("Not implemented yet")
-
-
-def finclarin_person_enhancer(cmdi_record):
-    """
-    Change FIN-CLARIN recorded as a person into an organization
-    """
-    modified = False
-    finclarin_persons = cmdi_record.xpath(
-        '//cmd:personInfo[./cmd:surname[text()="FIN-CLARIN"]]',
-        namespaces={"cmd": "http://www.clarin.eu/cmd/"},
-    )
-
-    for person_element in finclarin_persons:
-        modified = True
-        parent = person_element.getparent()
-
-        if parent.tag == "{http://www.clarin.eu/cmd/}contactPerson":
-            # TODO
-            continue
-        elif parent.tag == "{http://www.clarin.eu/cmd/}licensorPerson":
-            new_element = lxml.etree.fromstring(
-                """
-                <licensorOrganization xmlns="http://www.clarin.eu/cmd/">
-                    <role>licensor</role>
-                    <organizationInfo>
-                        <organizationName>FIN-CLARIN</organizationName>
-                        <communicationInfo>
-                            <email>fin-clarin@helsinki.fi</email>
-                        </communicationInfo>
-                    </organizationInfo>
-                </licensorOrganization>
-                """
-            )
-            grandparent = parent.getparent()
-            print(lxml.etree.tostring(grandparent, pretty_print=True, encoding=str))
-            grandparent.replace(parent, new_element)
-        else:
-            raise ValueError(
-                "Unexpected person element of type {parent.tag} encountered"
-            )
-
-    return modified
 
 
 @click.command()
@@ -131,8 +91,8 @@ def update_metadata(
             },
         )[0]
 
-        for modifier in modifiers:
-            modifier(cmdi_record)
+        for modifier_class in modifiers:
+            modifier = modifier_class(cmdi_record)
 
         if not dry_run:
             try:
