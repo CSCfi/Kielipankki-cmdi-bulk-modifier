@@ -24,9 +24,9 @@ def cmdi_records(repository_url, set_id):
         yield record.xml
 
 
-def selected_enhancers(click_context):
+def selected_modifiers(click_context):
     """
-    Return a list of enhancers the user has selected using flags.
+    Return a list of modifiers the user has selected using flags.
     """
     # TODO really parse from arguments
     return [finclarin_person_enhancer]
@@ -71,6 +71,7 @@ def finclarin_person_enhancer(cmdi_record):
                 """
             )
             grandparent = parent.getparent()
+            print(lxml.etree.tostring(grandparent, pretty_print=True, encoding=str))
             grandparent.replace(parent, new_element)
         else:
             raise ValueError(
@@ -99,7 +100,7 @@ def finclarin_person_enhancer(cmdi_record):
     is_flag=True,
     help="Output a summary of actions but make no changes to the repository",
 )
-def enhance_metadata(
+def update_metadata(
     ctx,
     session_id,
     set_id,
@@ -108,13 +109,13 @@ def enhance_metadata(
     dry_run,
 ):
     """
-    Enhance all records using the specified enhancers.
+    Edit all records using the specified modifications.
     """
 
     # TODO: remove this, it is here to make testing easier
     dry_run = True
 
-    enhancers = selected_enhancers(ctx)
+    modifiers = selected_modifiers(ctx)
 
     total_records = 0
     modified_records = 0
@@ -130,8 +131,8 @@ def enhance_metadata(
             },
         )[0]
 
-        for enhancer in enhancers:
-            enhancer(cmdi_record)
+        for modifier in modifiers:
+            modifier(cmdi_record)
 
         if not dry_run:
             try:
@@ -155,4 +156,4 @@ def enhance_metadata(
 if __name__ == "__main__":
     # pylint does not understand click wrappers
     # pylint: disable=no-value-for-parameter
-    enhance_metadata()
+    update_metadata()
