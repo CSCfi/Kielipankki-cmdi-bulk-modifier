@@ -82,13 +82,15 @@ def xml_string_diff(original_record_string, modified_record_string):
     is_flag=True,
     help="Output a summary of actions but make no changes to the repository",
 )
+@click.option("-v", "--verbose", is_flag=True, help="Print summary of modifications")
+@click.option(
+    "-vv",
+    "--vverbose",
+    is_flag=True,
+    help="Print summary of modifications and list non-modified records",
+)
 def update_metadata(
-    ctx,
-    session_id,
-    set_id,
-    oai_pmh_url,
-    upload_url,
-    dry_run,
+    ctx, session_id, set_id, oai_pmh_url, upload_url, dry_run, verbose, vverbose
 ):
     """
     Edit all records using the specified modifications.
@@ -116,20 +118,23 @@ def update_metadata(
             },
         )[0]
 
+        modified = False
         for modifier_class in modifiers:
             modifier = modifier_class(cmdi_record)
-            modifier.modify()
-        modified_record_string = lxml.etree.tostring(
-            cmdi_record, pretty_print=True, encoding=str
-        )
+            result = modifier.modify()
+            modified = result or modified
 
-        diff_str = xml_string_diff(original_record_string, modified_record_string)
+        if modified and (verbose or vverbose):
+            modified_record_string = lxml.etree.tostring(
+                cmdi_record, pretty_print=True, encoding=str
+            )
 
-        if diff_str:
+            diff_str = xml_string_diff(original_record_string, modified_record_string)
+
             click.echo(f"Diff for {pid}:")
             click.echo(diff_str)
             click.echo()
-        else:
+        elif not modified and vverbose:
             click.echo(f"No changes made for {pid}")
 
         if not dry_run:
