@@ -1,4 +1,5 @@
 import click
+import difflib
 import lxml
 from sickle import Sickle
 
@@ -39,6 +40,27 @@ def replace_record(pid, session_id, record):
     Delete old record and reupload with updated data.
     """
     raise UploadError("Not implemented yet")
+
+
+def xml_string_diff(original_record_string, modified_record_string):
+    """
+    Determine the diff between two XML strings.
+
+    The strings should be pretty-printed to allow for neat diff when doing line-by-line
+    comparison.
+
+    :param original_record_string: The orifinal XML as pretty-printed string
+    :type original_record_string: str
+    :param modified_record_string: The modified XML as pretty-printed string
+    :type modified_record_string: str
+    :returns: String representation of the diff for displaying to user
+    """
+    original_lines = original_record_string.split("\n")
+    modified_lines = modified_record_string.split("\n")
+    diff_lines = difflib.context_diff(
+        original_lines, modified_lines, fromfile="original", tofile="modified"
+    )
+    return "\n".join(diff_lines)
 
 
 @click.command()
@@ -82,6 +104,9 @@ def update_metadata(
     failed_records = 0
 
     for cmdi_record in cmdi_records(oai_pmh_url, set_id):
+        original_record_string = lxml.etree.tostring(
+            cmdi_record, pretty_print=True, encoding=str
+        )
         total_records += 1
         pid = cmdi_record.xpath(
             "oai:metadata/cmd:CMD/cmd:Header/cmd:MdSelfLink/text()",
@@ -93,6 +118,19 @@ def update_metadata(
 
         for modifier_class in modifiers:
             modifier = modifier_class(cmdi_record)
+            modifier.modify()
+        modified_record_string = lxml.etree.tostring(
+            cmdi_record, pretty_print=True, encoding=str
+        )
+
+        diff_str = xml_string_diff(original_record_string, modified_record_string)
+
+        if diff_str:
+            click.echo(f"Diff for {pid}:")
+            click.echo(diff_str)
+            click.echo()
+        else:
+            click.echo(f"No changes made for {pid}")
 
         if not dry_run:
             try:
