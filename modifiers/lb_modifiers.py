@@ -44,4 +44,5 @@ class FinclarinPersonToOrganizationModifier(BaseModifier):
                 raise ValueError(
                     "Unexpected person element of type {parent.tag} encountered"
                 )
+        lxml.etree.indent(self.cmdi_record)
         return modified
