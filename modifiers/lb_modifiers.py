@@ -13,6 +13,7 @@ class FinclarinPersonToOrganizationModifier(BaseModifier):
     """
 
     def modify(self):
+        modified = False
         finclarin_persons = self.elements_matching_xpath(
             './/cmd:personInfo[./cmd:surname[text()="FIN-CLARIN"]]',
         )
