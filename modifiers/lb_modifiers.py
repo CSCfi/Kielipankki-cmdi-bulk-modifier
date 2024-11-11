@@ -12,9 +12,10 @@ class FinclarinPersonToOrganizationModifier(BaseModifier):
     Modifier that fixes records where there is a person whose surname is FIN-CLARIN.
     """
 
-    def modify(self):
+    def modify(self, cmdi_record):
         modified = False
         finclarin_persons = self.elements_matching_xpath(
+            cmdi_record,
             './/cmd:personInfo[./cmd:surname[text()="FIN-CLARIN"]]',
         )
         for person_element in finclarin_persons:
@@ -44,5 +45,5 @@ class FinclarinPersonToOrganizationModifier(BaseModifier):
                 raise ValueError(
                     "Unexpected person element of type {parent.tag} encountered"
                 )
-        lxml.etree.indent(self.cmdi_record)
+        lxml.etree.indent(cmdi_record)
         return modified
