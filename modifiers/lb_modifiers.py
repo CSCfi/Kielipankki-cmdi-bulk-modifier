@@ -19,13 +19,13 @@ class FinclarinPersonToOrganizationModifier(BaseModifier):
             './/cmd:personInfo[./cmd:surname[text()="FIN-CLARIN"]]',
         )
         for person_element in finclarin_persons:
-            modified = True
             parent = person_element.getparent()
 
             if parent.tag == "{http://www.clarin.eu/cmd/}contactPerson":
                 # TODO
                 continue
             elif parent.tag == "{http://www.clarin.eu/cmd/}licensorPerson":
+                modified = True
                 new_element = lxml.etree.fromstring(
                     """
                     <licensorOrganization xmlns="http://www.clarin.eu/cmd/">
