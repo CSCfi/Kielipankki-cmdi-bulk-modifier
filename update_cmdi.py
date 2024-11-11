@@ -32,7 +32,7 @@ def selected_modifiers(click_context):
     Return a list of modifiers the user has selected using flags.
     """
     # TODO really parse from arguments
-    return [FinclarinPersonToOrganizationModifier]
+    return [FinclarinPersonToOrganizationModifier()]
 
 
 def replace_record(pid, session_id, record):
@@ -119,9 +119,8 @@ def update_metadata(
         )[0]
 
         modified = False
-        for modifier_class in modifiers:
-            modifier = modifier_class(cmdi_record)
-            result = modifier.modify()
+        for modifier in modifiers:
+            result = modifier.modify(cmdi_record)
             modified = result or modified
 
         if modified and (verbose or vverbose):
