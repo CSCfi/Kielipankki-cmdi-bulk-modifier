@@ -1,0 +1,12 @@
+[
+  {
+    "first_name": "Erika",
+    "last_name": "Example",
+    "organization_info_str": "<organizationInfo><organizationName>Imaginary organization</organizationName><communicationInfo><email>imaginary@example.com</email></communicationInfo></organizationInfo>"
+  },
+  {
+    "first_name": "Ida",
+    "last_name": "Imaginary",
+    "organization_info_str": "<organizationInfo><organizationName>Different organization</organizationName><communicationInfo><email>imaginary@example.com</email></communicationInfo></organizationInfo>"
+  }
+]

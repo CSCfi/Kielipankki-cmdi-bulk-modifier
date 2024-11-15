@@ -1,2 +1,4 @@
 *.sw?
 __pycache__
+conf/*
+!conf/example_*
