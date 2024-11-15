@@ -1,9 +1,13 @@
 import click
 import difflib
+import json
 import lxml
 from sickle import Sickle
 
-from modifiers.lb_modifiers import FinclarinPersonToOrganizationModifier
+from modifiers.lb_modifiers import (
+    FinclarinPersonToOrganizationModifier,
+    AddOrganizationForPersonModifier,
+)
 
 
 class UploadError(Exception):
@@ -31,8 +35,26 @@ def selected_modifiers(click_context):
     """
     Return a list of modifiers the user has selected using flags.
     """
-    # TODO really parse from arguments
-    return [FinclarinPersonToOrganizationModifier()]
+    modifiers = []
+
+    if click_context.params["add_affiliations_from"]:
+
+        affiliation_filename = "conf/affiliations.json"
+        with open(affiliation_filename, "r") as affiliation_file:
+            affiliations = json.loads(affiliation_file.read())
+            for affiliation in affiliations:
+                modifiers.append(
+                    AddOrganizationForPersonModifier(
+                        first_name=affiliation["first_name"],
+                        surname=affiliation["last_name"],
+                        organization_info_str=affiliation["organization_info_str"],
+                    )
+                )
+
+    if click_context.params["finclarin_to_organization"]:
+        modifiers.append(FinclarinPersonToOrganizationModifier())
+
+    return modifiers
 
 
 def replace_record(pid, session_id, record):
@@ -63,6 +85,12 @@ def xml_string_diff(original_record_string, modified_record_string):
     return "\n".join(diff_lines)
 
 
+# some of the arguments are parsed via click context passed to `selected_modifiers`
+# pylint: disable=unused-argument
+
+# pylint: disable=too-many-locals,too-many-arguments
+
+
 @click.command()
 @click.pass_context
 @click.argument("session_id")
@@ -78,6 +106,23 @@ def xml_string_diff(original_record_string, modified_record_string):
     help="URL of the upload API for modified records",
 )
 @click.option(
+    "--finclarin-to-organization",
+    is_flag=True,
+    help=(
+        'If a person with surname "FIN-CLARIN" is found, move the person into an '
+        "organization (if possible due to role limits)."
+    ),
+)
+@click.option(
+    "--add-affiliations-from",
+    type=click.Path(exists=True),
+    help=(
+        "Path to json file specifying persons and affiliations they should be given if "
+        "affiliation is not already present. See conf/example_affiliations.json for "
+        "template."
+    ),
+)
+@click.option(
     "--dry-run",
     is_flag=True,
     help="Output a summary of actions but make no changes to the repository",
@@ -90,7 +135,16 @@ def xml_string_diff(original_record_string, modified_record_string):
     help="Print summary of modifications and list non-modified records",
 )
 def update_metadata(
-    ctx, session_id, set_id, oai_pmh_url, upload_url, dry_run, verbose, vverbose
+    ctx,
+    session_id,
+    set_id,
+    oai_pmh_url,
+    upload_url,
+    finclarin_to_organization,
+    add_affiliations_from,
+    dry_run,
+    verbose,
+    vverbose,
 ):
     """
     Edit all records using the specified modifications.
