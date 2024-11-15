@@ -47,3 +47,51 @@ class FinclarinPersonToOrganizationModifier(BaseModifier):
                 )
         lxml.etree.indent(cmdi_record)
         return modified
+
+
+class AddOrganizationForPersonModifier(BaseModifier):
+    """
+    Modifier that finds matching persons without an organization and adds it.
+
+    Persons are matched based on name (first name and surname) and not having an
+    organization yet.
+    """
+
+    def __init__(self, first_name, surname, organization_info_str):
+        """
+        Create a new modifier for a specific person
+
+        :paran first_name: First name of the edited person
+        :type firstn_name: str
+        :param surname: Surname of the edited person
+        :type surname: str
+        :param organization_info_str: CMDI representation of the organization
+                                      (<OrganizationInfo>...</OrganizationInfo>)
+        :type organization_info_str: str
+        """
+        self.first_name = first_name
+        self.surname = surname
+        self.organization_info = lxml.etree.fromstring(organization_info_str)
+        super().__init__()
+
+    def modify(self, cmdi_record):
+        modified = False
+        matching_persons = self.elements_matching_xpath(
+            cmdi_record,
+            f".//cmd:personInfo["
+            f' ./cmd:surname[text()="{self.surname}"]'
+            f' and ./cmd:givenName[text()="{self.first_name}"]'
+            f"]["
+            f"not(child::cmd:affiliation)"
+            f"]",
+        )
+        for person in matching_persons:
+            affiliation_element = lxml.etree.fromstring(
+                "<affiliation><role>affiliation</role></affiliation>"
+            )
+            affiliation_element.append(self.organization_info)
+            person.append(affiliation_element)
+            lxml.etree.indent(cmdi_record)
+
+            modified = True
+        return modified
