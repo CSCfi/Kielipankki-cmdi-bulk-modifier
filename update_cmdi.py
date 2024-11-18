@@ -5,8 +5,9 @@ import lxml
 from sickle import Sickle
 
 from modifiers.lb_modifiers import (
-    FinclarinPersonToOrganizationModifier,
     AddOrganizationForPersonModifier,
+    FinclarinPersonToOrganizationModifier,
+    LanguageBankPersonToOrganizationModifier,
 )
 
 
@@ -53,6 +54,9 @@ def selected_modifiers(click_context):
 
     if click_context.params["finclarin_to_organization"]:
         modifiers.append(FinclarinPersonToOrganizationModifier())
+
+    if click_context.params["language_bank_to_organization"]:
+        modifiers.append(LanguageBankPersonToOrganizationModifier())
 
     return modifiers
 
@@ -114,6 +118,14 @@ def xml_string_diff(original_record_string, modified_record_string):
     ),
 )
 @click.option(
+    "--language-bank-to-organization",
+    is_flag=True,
+    help=(
+        'If a person with surname "The Language Bank of Finland" is found, '
+        "move the person into an organization (if possible due to role limits)."
+    ),
+)
+@click.option(
     "--add-affiliations-from",
     type=click.Path(exists=True),
     help=(
@@ -141,6 +153,7 @@ def update_metadata(
     oai_pmh_url,
     upload_url,
     finclarin_to_organization,
+    language_bank_to_organization,
     add_affiliations_from,
     dry_run,
     verbose,

@@ -43,7 +43,60 @@ class FinclarinPersonToOrganizationModifier(BaseModifier):
                 grandparent.replace(parent, new_element)
             else:
                 raise ValueError(
-                    "Unexpected person element of type {parent.tag} encountered"
+                    f"Unexpected person element of type {parent.tag} encountered"
+                )
+        lxml.etree.indent(cmdi_record)
+        return modified
+
+
+class LanguageBankPersonToOrganizationModifier(BaseModifier):
+    """
+    Modifier that fixes records where there is a person whose surname is "The Language
+    Bank of Finland".
+    """
+
+    def modify(self, cmdi_record):
+        modified = False
+        finclarin_persons = self.elements_matching_xpath(
+            cmdi_record,
+            './/cmd:personInfo[./cmd:surname[text()="The Language Bank of Finland"]]',
+        )
+        for person_element in finclarin_persons:
+            parent = person_element.getparent()
+
+            if parent.tag in [
+                "{http://www.clarin.eu/cmd/}contactPerson",
+                "{http://www.clarin.eu/cmd/}metadataCreator",
+            ]:
+                # TODO
+                continue
+            elif (
+                parent.tag
+                == "{http://www.clarin.eu/cmd/}distributionRightsHolderPerson"
+            ):
+                # TODO
+                continue
+            elif parent.tag == "{http://www.clarin.eu/cmd/}licensorPerson":
+                modified = True
+                new_element = lxml.etree.fromstring(
+                    """
+                    <licensorOrganization xmlns="http://www.clarin.eu/cmd/">
+                        <role>licensor</role>
+                        <organizationInfo>
+                            <organizationName>CSC - IT Center for Science Ltd.</organizationName>
+                            <departmentName>The Language Bank of Finland</departmentName>
+                            <communicationInfo>
+                                <email>kielipankki@csc.fi</email>
+                            </communicationInfo>
+                        </organizationInfo>
+                    </licensorOrganization>
+                    """
+                )
+                grandparent = parent.getparent()
+                grandparent.replace(parent, new_element)
+            else:
+                raise ValueError(
+                    f"Unexpected person element of type {parent.tag} encountered"
                 )
         lxml.etree.indent(cmdi_record)
         return modified
