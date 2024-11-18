@@ -170,6 +170,7 @@ def update_metadata(
 
     total_records = 0
     modified_records = 0
+    uploaded_records = 0
     failed_records = 0
 
     for cmdi_record in cmdi_records(oai_pmh_url, set_id):
@@ -194,6 +195,7 @@ def update_metadata(
             modified_record_string = lxml.etree.tostring(
                 cmdi_record, pretty_print=True, encoding=str
             )
+            modified_records += 1
 
             diff_str = xml_string_diff(original_record_string, modified_record_string)
 
@@ -214,11 +216,11 @@ def update_metadata(
                 failed_records += 1
             else:
                 click.echo(f"Successfully uploaded {pid}")
-                modified_records += 1
+                uploaded_records += 1
 
     print(
-        f"{total_records} processed, "
-        f"{modified_records} uploads and {failed_records} failures."
+        f"{total_records} processed, {modified_records} modified, out of "
+        f"which {uploaded_records} uploaded and {failed_records} failures."
     )
 
 
