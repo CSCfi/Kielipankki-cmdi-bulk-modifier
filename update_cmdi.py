@@ -163,9 +163,6 @@ def update_metadata(
     Edit all records using the specified modifications.
     """
 
-    # TODO: remove this, it is here to make testing easier
-    dry_run = True
-
     modifiers = selected_modifiers(ctx)
 
     total_records = 0
