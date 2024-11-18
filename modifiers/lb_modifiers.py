@@ -140,7 +140,7 @@ class AddOrganizationForPersonModifier(BaseModifier):
         """
         self.first_name = first_name
         self.surname = surname
-        self.organization_info = lxml.etree.fromstring(organization_info_str)
+        self.organization_info_str = organization_info_str
         super().__init__()
 
     def modify(self, cmdi_record):
@@ -158,7 +158,10 @@ class AddOrganizationForPersonModifier(BaseModifier):
             affiliation_element = lxml.etree.fromstring(
                 "<affiliation><role>affiliation</role></affiliation>"
             )
-            affiliation_element.append(self.organization_info)
+            organization_info_element = lxml.etree.fromstring(
+                self.organization_info_str
+            )
+            affiliation_element.append(organization_info_element)
             person.append(affiliation_element)
             lxml.etree.indent(cmdi_record)
 
