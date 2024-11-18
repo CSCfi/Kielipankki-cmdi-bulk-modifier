@@ -202,7 +202,7 @@ def update_metadata(
         elif not modified and vverbose:
             click.echo(f"No changes made for {pid}")
 
-        if not dry_run:
+        if modified and not dry_run:
             try:
                 replace_record(pid, session_id, cmdi_record)
             except UploadError as err:
