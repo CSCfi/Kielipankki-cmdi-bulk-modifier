@@ -21,8 +21,10 @@ class FinclarinPersonToOrganizationModifier(BaseModifier):
         for person_element in finclarin_persons:
             parent = person_element.getparent()
 
-            if parent.tag == "{http://www.clarin.eu/cmd/}contactPerson":
-                # TODO
+            if parent.tag in [
+                "{http://www.clarin.eu/cmd/}contactPerson",
+                "{http://www.clarin.eu/cmd/}metadataCreator",
+            ]:
                 continue
             elif parent.tag == "{http://www.clarin.eu/cmd/}licensorPerson":
                 modified = True
@@ -68,7 +70,6 @@ class LanguageBankPersonToOrganizationModifier(BaseModifier):
                 "{http://www.clarin.eu/cmd/}contactPerson",
                 "{http://www.clarin.eu/cmd/}metadataCreator",
             ]:
-                # TODO
                 continue
             elif (
                 parent.tag
