@@ -10,6 +10,11 @@ from modifiers.base import BaseModifier
 class FinclarinPersonToOrganizationModifier(BaseModifier):
     """
     Modifier that fixes records where there is a person whose surname is FIN-CLARIN.
+
+    NB: at the moment, the plan for contact persons and licensor persons is to keep the
+    "person" as is, and just add the correct organization as affiliation for that
+    "person". Thus, these are not handled by this modifier: use
+    AddOrganizationForPersonModifier instead.
     """
 
     def modify(self, cmdi_record):
@@ -55,6 +60,11 @@ class LanguageBankPersonToOrganizationModifier(BaseModifier):
     """
     Modifier that fixes records where there is a person whose surname is "The Language
     Bank of Finland".
+
+    NB: at the moment, the plan for contact persons and licensor persons is to keep the
+    "person" as is, and just add the correct organization as affiliation for that
+    "person". Thus, these are not handled by this modifier: use
+    AddOrganizationForPersonModifier instead.
     """
 
     def modify(self, cmdi_record):
