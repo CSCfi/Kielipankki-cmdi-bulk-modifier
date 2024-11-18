@@ -74,8 +74,23 @@ class LanguageBankPersonToOrganizationModifier(BaseModifier):
                 parent.tag
                 == "{http://www.clarin.eu/cmd/}distributionRightsHolderPerson"
             ):
-                # TODO
-                continue
+                modified = True
+                new_element = lxml.etree.fromstring(
+                    """
+                    <distributionRightsHolderOrganization xmlns="http://www.clarin.eu/cmd/">
+                        <role>distributionRightsHolder</role>
+                        <organizationInfo>
+                            <organizationName>CSC - IT Center for Science Ltd.</organizationName>
+                            <departmentName>The Language Bank of Finland</departmentName>
+                            <communicationInfo>
+                                <email>kielipankki@csc.fi</email>
+                            </communicationInfo>
+                        </organizationInfo>
+                    </distributionRightsHolderOrganization>
+                    """
+                )
+                grandparent = parent.getparent()
+                grandparent.replace(parent, new_element)
             elif parent.tag == "{http://www.clarin.eu/cmd/}licensorPerson":
                 modified = True
                 new_element = lxml.etree.fromstring(
