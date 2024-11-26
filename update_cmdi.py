@@ -188,18 +188,20 @@ def update_metadata(
             result = modifier.modify(cmdi_record)
             modified = result or modified
 
-        if modified and (verbose or vverbose):
-            modified_record_string = lxml.etree.tostring(
-                cmdi_record, pretty_print=True, encoding=str
-            )
+        if modified:
             modified_records += 1
 
-            diff_str = xml_string_diff(original_record_string, modified_record_string)
+            if verbose or vverbose:
+                modified_record_string = lxml.etree.tostring(
+                    cmdi_record, pretty_print=True, encoding=str
+                )
 
-            click.echo(f"Diff for {pid}:")
-            click.echo(diff_str)
-            click.echo()
-        elif not modified and vverbose:
+                diff_str = xml_string_diff(original_record_string, modified_record_string)
+
+                click.echo(f"Diff for {pid}:")
+                click.echo(diff_str)
+                click.echo()
+        elif vverbose:
             click.echo(f"No changes made for {pid}")
 
         if modified and not dry_run:
