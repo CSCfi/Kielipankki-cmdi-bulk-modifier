@@ -85,9 +85,16 @@ class FinclarinPersonToOrganizationModifier(PersonToOrganizationModifier):
     def __init__(self):
         organization_info_str = """
             <organizationInfo>
-                <organizationName>FIN-CLARIN</organizationName>
+                <organizationName xml:lang="en">FIN-CLARIN</organizationName>
+                <organizationShortName xml:lang="en">FIN-CLARIN</organizationShortName>
+                <departmentName xml:lang="en">University of Helsinki</departmentName>
                 <communicationInfo>
                     <email>fin-clarin@helsinki.fi</email>
+                    <url>http://www.helsinki.fi/fin-clarin</url>
+                    <address>PO Box 24 (Unioninkatu 40)</address>
+                    <zipCode>00014</zipCode>
+                    <city>University of Helsinki</city>
+                    <country>Finland</country>
                 </communicationInfo>
             </organizationInfo>
             """
@@ -105,10 +112,19 @@ class LanguageBankPersonToOrganizationModifier(PersonToOrganizationModifier):
     def __init__(self):
         organization_info_str = """
             <organizationInfo>
-                <organizationName>CSC - IT Center for Science Ltd.</organizationName>
-                <departmentName>The Language Bank of Finland</departmentName>
+                <organizationName xml:lang="fi">CSC - Tieteen tietotekniikan keskus Oy</organizationName>
+                <organizationName xml:lang="en">CSC — IT Center for Science Ltd</organizationName>
+                <organizationShortName xml:lang="en">CSC</organizationShortName>
+                <departmentName xml:lang="en">Kielipankki</departmentName>
                 <communicationInfo>
                     <email>kielipankki@csc.fi</email>
+                    <url>http://www.csc.fi/english</url>
+                    <address>P.O. Box 405</address>
+                    <zipCode>FI-02101</zipCode>
+                    <city>Espoo</city>
+                    <country>Finland</country>
+                    <telephoneNumber>+358 (0)9 457 2001</telephoneNumber>
+                    <faxNumber>+358 (0)9 457 2302</faxNumber>
                 </communicationInfo>
             </organizationInfo>
             """
