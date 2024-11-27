@@ -146,7 +146,7 @@ class AddOrganizationForPersonModifier(BaseModifier):
         """
         Create a new modifier for a specific person
 
-        :paran first_name: First name of the edited person
+        :param first_name: First name of the edited person
         :type firstn_name: str
         :param surname: Surname of the edited person
         :type surname: str
