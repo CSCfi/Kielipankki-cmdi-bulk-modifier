@@ -196,7 +196,9 @@ def update_metadata(
                     cmdi_record, pretty_print=True, encoding=str
                 )
 
-                diff_str = xml_string_diff(original_record_string, modified_record_string)
+                diff_str = xml_string_diff(
+                    original_record_string, modified_record_string
+                )
 
                 click.echo(f"Diff for {pid}:")
                 click.echo(diff_str)
