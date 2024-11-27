@@ -84,7 +84,7 @@ def xml_string_diff(original_record_string, modified_record_string):
     original_lines = original_record_string.split("\n")
     modified_lines = modified_record_string.split("\n")
     diff_lines = difflib.context_diff(
-        original_lines, modified_lines, fromfile="original", tofile="modified"
+        original_lines, modified_lines, fromfile="original", tofile="modified", n=6
     )
     return "\n".join(diff_lines)
 
