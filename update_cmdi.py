@@ -40,7 +40,7 @@ def selected_modifiers(click_context):
 
     if click_context.params["add_affiliations_from"]:
 
-        affiliation_filename = "conf/affiliations.json"
+        affiliation_filename = click_context.params["add_affiliations_from"]
         with open(affiliation_filename, "r") as affiliation_file:
             affiliations = json.loads(affiliation_file.read())
             for affiliation in affiliations:
