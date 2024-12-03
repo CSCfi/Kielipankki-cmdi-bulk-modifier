@@ -180,9 +180,12 @@ def xml_string_diff(original_record_string, modified_record_string):
     ),
 )
 @click.option(
-    "--dry-run",
-    is_flag=True,
-    help="Output a summary of actions but make no changes to the repository",
+    "--live-update/--dry-run",
+    default=False,
+    help=(
+        "Choose whether to upload changes directly to production or just show the "
+        "diff. Defaults to dry run."
+    ),
 )
 @click.option("-v", "--verbose", is_flag=True, help="Print summary of modifications")
 @click.option(
@@ -200,7 +203,7 @@ def update_metadata(
     finclarin_to_organization,
     language_bank_to_organization,
     add_affiliations_from,
-    dry_run,
+    live_update,
     verbose,
     vverbose,
 ):
@@ -251,7 +254,7 @@ def update_metadata(
         elif vverbose:
             click.echo(f"No changes made for {pid}")
 
-        if modified and not dry_run:
+        if modified and live_update:
             try:
                 replace_record(api_url, pid, session_id, cmdi_record)
             except UploadError as err:
