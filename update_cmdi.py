@@ -1,5 +1,6 @@
 import difflib
 import json
+import pathlib
 
 import click
 import lxml
@@ -180,6 +181,13 @@ def xml_string_diff(original_record_string, modified_record_string):
     ),
 )
 @click.option(
+    "--save-originals-to",
+    type=click.Path(
+        file_okay=False, dir_okay=True, exists=True, path_type=pathlib.Path
+    ),
+    help="Save original XML records as files in the given directory",
+)
+@click.option(
     "--live-update/--dry-run",
     default=False,
     help=(
@@ -204,6 +212,7 @@ def update_metadata(
     language_bank_to_organization,
     add_affiliations_from,
     live_update,
+    save_originals_to,
     verbose,
     vverbose,
 ):
@@ -238,6 +247,12 @@ def update_metadata(
 
         if modified:
             modified_records += 1
+
+            if save_originals_to:
+                with open(
+                    save_originals_to / f"{pid}.xml", "w", encoding="utf-8"
+                ) as original_record_file:
+                    original_record_file.write(original_record_string)
 
             if verbose or vverbose:
                 modified_record_string = lxml.etree.tostring(
