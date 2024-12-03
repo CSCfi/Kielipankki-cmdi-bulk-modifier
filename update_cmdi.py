@@ -3,6 +3,7 @@ import json
 
 import click
 import lxml
+import requests
 from sickle import Sickle
 
 from modifiers.lb_modifiers import (
@@ -62,11 +63,49 @@ def selected_modifiers(click_context):
     return modifiers
 
 
-def replace_record(pid, session_id, record):
+def replace_record(api_url, pid, session_id, record):
     """
     Delete old record and reupload with updated data.
     """
-    raise UploadError("Not implemented yet")
+    delete_record(api_url, pid, session_id)
+    upload_record(api_url, pid, session_id, record, False)  # TODO published
+
+
+def delete_record(api_url, pid, session_id):
+    """
+    Delete a record from COMEDI.
+    """
+    requests.get(
+        f"{api_url}/rest?command=delete-record",
+        params={"session-id": session_id, "identifier": pid},
+    )
+
+
+def upload_record(api_url, pid, session_id, record, published):
+    """
+    Upload the given XML record
+    """
+
+    params = {
+        "group": "FIN-CLARIN",
+        "session-id": session_id,
+    }
+    if published:
+        params["published"] = True
+
+    response = requests.post(
+        f"{api_url}/upload",
+        params=params,
+        files={"file": (f"{pid}.xml", record, "text/xml")},
+    )
+    response.raise_for_status()
+
+    if "error" in response.json():
+        raise UploadError(f"Upload of {pid} failed: {response.json()['error']}")
+    if "success" not in response.json() or not response.json()["success"]:
+        raise UploadError(
+            "Something went wrong when uploading {pid}: {response.json()}"
+        )
 
 
 def xml_string_diff(original_record_string, modified_record_string):
@@ -106,9 +145,9 @@ def xml_string_diff(original_record_string, modified_record_string):
     help="URL of the OAI-PMH API from which data is retrieved",
 )
 @click.option(
-    "--upload-url",
-    default="https://clarino.uib.no/comedi/upload",
-    help="URL of the upload API for modified records",
+    "--api-url",
+    default="https://clarino.uib.no/comedi",
+    help="URL of the API for modifying records. Comedi endpoints are assumed",
 )
 @click.option(
     "--finclarin-to-organization",
@@ -152,7 +191,7 @@ def update_metadata(
     session_id,
     set_id,
     oai_pmh_url,
-    upload_url,
+    api_url,
     finclarin_to_organization,
     language_bank_to_organization,
     add_affiliations_from,
@@ -209,7 +248,7 @@ def update_metadata(
 
         if modified and not dry_run:
             try:
-                replace_record(pid, session_id, cmdi_record)
+                replace_record(api_url, pid, session_id, cmdi_record)
             except UploadError as err:
                 click.echo(
                     f"COMEDI upload failed for record {pid}: {str(err)}",
