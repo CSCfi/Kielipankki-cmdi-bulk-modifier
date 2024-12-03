@@ -89,12 +89,14 @@ def delete_record(api_url, pid, session_id):
 
 def upload_record(api_url, pid, session_id, record, published):
     """
-    Upload the given XML record
+    Upload the given XML record, using only the last part of the PID (e.g. lb-1234) as the
+    identifier.
     """
 
     params = {
         "group": "FIN-CLARIN",
         "session-id": session_id,
+        "identifier": pid.split(":")[-1],
     }
     if published:
         params["published"] = published
