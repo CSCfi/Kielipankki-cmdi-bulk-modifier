@@ -66,9 +66,14 @@ def selected_modifiers(click_context):
 def replace_record(api_url, pid, session_id, record):
     """
     Delete old record and reupload with updated data.
+
+    All records are set to published, because the records are iterated without providing
+    "status" parameter to the OAI-PMH API, thus producing only published records from
+    Comedi (and likely all other OAI-PMH APIs too, as unpublished records and the
+    associated status are Comedi specialities).
     """
     delete_record(api_url, pid, session_id)
-    upload_record(api_url, pid, session_id, record, False)  # TODO published
+    upload_record(api_url, pid, session_id, record, True)
 
 
 def delete_record(api_url, pid, session_id):
