@@ -6,4 +6,6 @@ repository aims to offer helper tools for this kind of mass operations on a
 as-needed basis.
 
 Currently supported operations:
-- none =(
+- Add affiliation for matching persons (first and last name) without affiliations
+- Change person elements with "FIN-CLARIN" as surname into organization elements (where possible)
+- Change person elements with "The Language Bank of Finland" as surname into organization elements (where possible)
