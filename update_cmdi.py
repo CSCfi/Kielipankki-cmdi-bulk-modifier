@@ -124,7 +124,9 @@ def upload_record(api_url, short_identifier, session_id, record, published):
     response = requests.post(
         f"{api_url}/upload",
         params=params,
-        files={"file": (f"{short_identifier}.xml", record, "text/xml")},
+        files={
+            "file": (f"{short_identifier}.xml", lxml.etree.tostring(record), "text/xml")
+        },
     )
     response.raise_for_status()
 
