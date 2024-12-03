@@ -131,10 +131,12 @@ def upload_record(api_url, short_identifier, session_id, record, published):
     response.raise_for_status()
 
     if "error" in response.json():
-        raise UploadError(f"Upload of {pid} failed: {response.json()['error']}")
+        raise UploadError(
+            f"Upload of {short_identifier} failed: {response.json()['error']}"
+        )
     if "success" not in response.json() or not response.json()["success"]:
         raise UploadError(
-            "Something went wrong when uploading {pid}: {response.json()}"
+            "Something went wrong when uploading {schort_identifier}: {response.json()}"
         )
 
 
