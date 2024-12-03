@@ -64,6 +64,25 @@ def selected_modifiers(click_context):
     return modifiers
 
 
+def short_identifier_from_pid(pid):
+    """
+    Return short identifier (e.g. lb-123) from pid (e.g. urn:nbn:fi:lb-123).
+    """
+    identifier = pid.split(":")[-1]
+    parts = identifier.split("-")
+    if parts[0] != "lb":
+        raise ValueError(
+            f"Unexpected PID format {pid} encountered: last part does not start with 'lb-'"
+        )
+    try:
+        int(parts[1])
+    except ValueError:
+        raise ValueError(
+            f"Unexpected PID format {pid} encountered: does not end with a number"
+        )
+    return identifier
+
+
 def replace_record(api_url, pid, session_id, record):
     """
     Delete old record and reupload with updated data.
@@ -83,7 +102,7 @@ def delete_record(api_url, pid, session_id):
     """
     requests.get(
         f"{api_url}/rest?command=delete-record",
-        params={"session-id": session_id, "identifier": pid},
+        params={"session-id": session_id, "identifier": short_identifier_from_pid(pid)},
     )
 
 
@@ -96,7 +115,7 @@ def upload_record(api_url, pid, session_id, record, published):
     params = {
         "group": "FIN-CLARIN",
         "session-id": session_id,
-        "identifier": pid.split(":")[-1],
+        "identifier": short_identifier_from_pid(pid),
     }
     if published:
         params["published"] = published
