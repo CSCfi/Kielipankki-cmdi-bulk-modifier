@@ -1,6 +1,7 @@
-import click
 import difflib
 import json
+
+import click
 import lxml
 from sickle import Sickle
 
