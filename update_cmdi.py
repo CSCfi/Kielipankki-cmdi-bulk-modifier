@@ -96,7 +96,7 @@ def upload_record(api_url, pid, session_id, record, published):
         "session-id": session_id,
     }
     if published:
-        params["published"] = True
+        params["published"] = published
 
     response = requests.post(
         f"{api_url}/upload",
