@@ -92,21 +92,22 @@ def replace_record(api_url, pid, session_id, record):
     Comedi (and likely all other OAI-PMH APIs too, as unpublished records and the
     associated status are Comedi specialities).
     """
-    delete_record(api_url, pid, session_id)
-    upload_record(api_url, pid, session_id, record, True)
+    short_identifier = short_identifier_from_pid(pid)
+    delete_record(api_url, short_identifier, session_id)
+    upload_record(api_url, short_identifier, session_id, record, True)
 
 
-def delete_record(api_url, pid, session_id):
+def delete_record(api_url, short_identifier, session_id):
     """
     Delete a record from COMEDI.
     """
     requests.get(
         f"{api_url}/rest?command=delete-record",
-        params={"session-id": session_id, "identifier": short_identifier_from_pid(pid)},
+        params={"session-id": session_id, "identifier": short_identifier},
     )
 
 
-def upload_record(api_url, pid, session_id, record, published):
+def upload_record(api_url, short_identifier, session_id, record, published):
     """
     Upload the given XML record, using only the last part of the PID (e.g. lb-1234) as the
     identifier.
@@ -115,7 +116,7 @@ def upload_record(api_url, pid, session_id, record, published):
     params = {
         "group": "FIN-CLARIN",
         "session-id": session_id,
-        "identifier": short_identifier_from_pid(pid),
+        "identifier": short_identifier,
     }
     if published:
         params["published"] = published
@@ -123,7 +124,7 @@ def upload_record(api_url, pid, session_id, record, published):
     response = requests.post(
         f"{api_url}/upload",
         params=params,
-        files={"file": (f"{pid}.xml", record, "text/xml")},
+        files={"file": (f"{short_identifier}.xml", record, "text/xml")},
     )
     response.raise_for_status()
 
