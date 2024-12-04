@@ -1,7 +1,10 @@
-import click
 import difflib
 import json
+import pathlib
+
+import click
 import lxml
+import requests
 from sickle import Sickle
 
 from modifiers.lb_modifiers import (
@@ -61,11 +64,80 @@ def selected_modifiers(click_context):
     return modifiers
 
 
-def replace_record(pid, session_id, record):
+def short_identifier_from_pid(pid):
+    """
+    Return short identifier (e.g. lb-123) from pid (e.g. urn:nbn:fi:lb-123).
+    """
+    identifier = pid.split(":")[-1]
+    parts = identifier.split("-")
+    if parts[0] != "lb":
+        raise ValueError(
+            f"Unexpected PID format {pid} encountered: last part does not start with 'lb-'"
+        )
+    try:
+        int(parts[1])
+    except ValueError:
+        raise ValueError(
+            f"Unexpected PID format {pid} encountered: does not end with a number"
+        )
+    return identifier
+
+
+def replace_record(api_url, pid, session_id, record):
     """
     Delete old record and reupload with updated data.
+
+    All records are set to published, because the records are iterated without providing
+    "status" parameter to the OAI-PMH API, thus producing only published records from
+    Comedi (and likely all other OAI-PMH APIs too, as unpublished records and the
+    associated status are Comedi specialities).
     """
-    raise UploadError("Not implemented yet")
+    short_identifier = short_identifier_from_pid(pid)
+    delete_record(api_url, short_identifier, session_id)
+    upload_record(api_url, short_identifier, session_id, record, True)
+
+
+def delete_record(api_url, short_identifier, session_id):
+    """
+    Delete a record from COMEDI.
+    """
+    requests.get(
+        f"{api_url}/rest?command=delete-record",
+        params={"session-id": session_id, "identifier": short_identifier},
+    )
+
+
+def upload_record(api_url, short_identifier, session_id, record, published):
+    """
+    Upload the given XML record, using only the last part of the PID (e.g. lb-1234) as the
+    identifier.
+    """
+
+    params = {
+        "group": "FIN-CLARIN",
+        "session-id": session_id,
+        "identifier": short_identifier,
+    }
+    if published:
+        params["published"] = published
+
+    response = requests.post(
+        f"{api_url}/upload",
+        params=params,
+        files={
+            "file": (f"{short_identifier}.xml", lxml.etree.tostring(record), "text/xml")
+        },
+    )
+    response.raise_for_status()
+
+    if "error" in response.json():
+        raise UploadError(
+            f"Upload of {short_identifier} failed: {response.json()['error']}"
+        )
+    if "success" not in response.json() or not response.json()["success"]:
+        raise UploadError(
+            "Something went wrong when uploading {schort_identifier}: {response.json()}"
+        )
 
 
 def xml_string_diff(original_record_string, modified_record_string):
@@ -105,9 +177,9 @@ def xml_string_diff(original_record_string, modified_record_string):
     help="URL of the OAI-PMH API from which data is retrieved",
 )
 @click.option(
-    "--upload-url",
-    default="https://clarino.uib.no/comedi/upload",
-    help="URL of the upload API for modified records",
+    "--api-url",
+    default="https://clarino.uib.no/comedi",
+    help="URL of the API for modifying records. Comedi endpoints are assumed",
 )
 @click.option(
     "--finclarin-to-organization",
@@ -135,9 +207,19 @@ def xml_string_diff(original_record_string, modified_record_string):
     ),
 )
 @click.option(
-    "--dry-run",
-    is_flag=True,
-    help="Output a summary of actions but make no changes to the repository",
+    "--save-originals-to",
+    type=click.Path(
+        file_okay=False, dir_okay=True, exists=True, path_type=pathlib.Path
+    ),
+    help="Save original XML records as files in the given directory",
+)
+@click.option(
+    "--live-update/--dry-run",
+    default=False,
+    help=(
+        "Choose whether to upload changes directly to production or just show the "
+        "diff. Defaults to dry run."
+    ),
 )
 @click.option("-v", "--verbose", is_flag=True, help="Print summary of modifications")
 @click.option(
@@ -151,11 +233,12 @@ def update_metadata(
     session_id,
     set_id,
     oai_pmh_url,
-    upload_url,
+    api_url,
     finclarin_to_organization,
     language_bank_to_organization,
     add_affiliations_from,
-    dry_run,
+    live_update,
+    save_originals_to,
     verbose,
     vverbose,
 ):
@@ -182,6 +265,7 @@ def update_metadata(
                 "oai": "http://www.openarchives.org/OAI/2.0/",
             },
         )[0]
+        pid = pid.strip()
 
         modified = False
         for modifier in modifiers:
@@ -190,6 +274,12 @@ def update_metadata(
 
         if modified:
             modified_records += 1
+
+            if save_originals_to:
+                with open(
+                    save_originals_to / f"{pid}.xml", "w", encoding="utf-8"
+                ) as original_record_file:
+                    original_record_file.write(original_record_string)
 
             if verbose or vverbose:
                 modified_record_string = lxml.etree.tostring(
@@ -206,9 +296,9 @@ def update_metadata(
         elif vverbose:
             click.echo(f"No changes made for {pid}")
 
-        if modified and not dry_run:
+        if modified and live_update:
             try:
-                replace_record(pid, session_id, cmdi_record)
+                replace_record(api_url, pid, session_id, cmdi_record)
             except UploadError as err:
                 click.echo(
                     f"COMEDI upload failed for record {pid}: {str(err)}",
