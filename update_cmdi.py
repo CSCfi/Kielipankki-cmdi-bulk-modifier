@@ -265,6 +265,7 @@ def update_metadata(
                 "oai": "http://www.openarchives.org/OAI/2.0/",
             },
         )[0]
+        pid = pid.strip()
 
         modified = False
         for modifier in modifiers:
