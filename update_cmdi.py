@@ -8,6 +8,7 @@ import requests
 from sickle import Sickle
 
 from modifiers.lb_modifiers import (
+    UhelDistributionRightsHolderModifier,
     AddOrganizationForPersonModifier,
     FinclarinPersonToOrganizationModifier,
     LanguageBankPersonToOrganizationModifier,
@@ -60,6 +61,16 @@ def selected_modifiers(click_context):
 
     if click_context.params["language_bank_to_organization"]:
         modifiers.append(LanguageBankPersonToOrganizationModifier())
+
+    if click_context.params["uhel_distribution_rights_holder_for"]:
+        identifier_filename = click_context.params[
+            "uhel_distribution_rights_holder_for"
+        ]
+        with open(identifier_filename, "r") as identifier_file:
+            identifiers = [
+                identifier.strip() for identifier in identifier_file.readlines()
+            ]
+        modifiers.append(UhelDistributionRightsHolderModifier(identifiers))
 
     return modifiers
 
@@ -182,6 +193,14 @@ def xml_string_diff(original_record_string, modified_record_string):
     help="URL of the API for modifying records. Comedi endpoints are assumed",
 )
 @click.option(
+    "--uhel-distribution-rights-holder-for",
+    type=click.Path(exists=True),
+    help=(
+        "Add UHEL as distribution rights holder for a hard-coded list of "
+        "corpora that are really published by LBF."
+    ),
+)
+@click.option(
     "--finclarin-to-organization",
     is_flag=True,
     help=(
@@ -234,6 +253,7 @@ def update_metadata(
     set_id,
     oai_pmh_url,
     api_url,
+    uhel_distribution_rights_holder_for,
     finclarin_to_organization,
     language_bank_to_organization,
     add_affiliations_from,

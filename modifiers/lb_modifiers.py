@@ -7,6 +7,89 @@ import lxml
 from modifiers.base import BaseModifier
 
 
+class AddDistributionRightsHolderModifier(BaseModifier):
+    """
+    Modifier that adds a distribution rights holder to a given set of records.
+    """
+
+    def __init__(
+        self, modified_identifiers, distribution_rights_holder_str, *args, **kwargs
+    ):
+        """
+        :param modified_identifiers: Identifiers (e.g. "urn:nbn:fi:lb-123") that specify which
+                                     records should be modified. Records whose identifier is not
+                                     found in the list are not altered. The identifier is
+                                     assumed to be found in "//cmd:Header/cmd:MdSelfLink/text()".
+        :type modified_identifiers: list
+        :param distribution_rights_holder_str: String representing the XML content to be inserted as
+                                               publisher
+        :type distribution_rights_holder_str: str
+        """
+        self.modified_identifiers = modified_identifiers
+        self.distribution_rights_holder_str = distribution_rights_holder_str
+        super().__init__(*args, **kwargs)
+
+    def is_listed_for_modification(self, cmdi_record):
+        """
+        Return True if the given record should be modified.
+
+        :param cmdi_record: The full record that is up for modifications
+        :type cmdi_record: lxml.etree
+        """
+        identifier = self.elements_matching_xpath(
+            cmdi_record, "oai:metadata/cmd:CMD/cmd:Header/cmd:MdSelfLink/text()"
+        )[0]
+        return identifier in self.modified_identifiers
+
+    def modify(self, cmdi_record):
+        if not self.is_listed_for_modification(cmdi_record):
+            return False
+
+        if self.elements_matching_xpath(
+            cmdi_record,
+            "./cmd:distributionInfo/cmd:licenceInfo/cmd:distributionRightsHolderPerson",
+        ) or self.elements_matching_xpath(
+            cmdi_record,
+            "./cmd:distributionInfo/cmd:licenceInfo/cmd:distributionRightsHolderOrganization",
+        ):
+            raise ValueError("At least one distribution rightsholder already present")
+
+        license_info_element = self.elements_matching_xpath(
+            cmdi_record,
+            "./oai:metadata/cmd:CMD/cmd:Components/cmd:resourceInfo/cmd:distributionInfo/cmd:licenceInfo",
+        )[0]
+        new_distribution_rights_holder_element = lxml.etree.fromstring(
+            self.distribution_rights_holder_str
+        )
+        license_info_element.append(new_distribution_rights_holder_element)
+
+        lxml.etree.indent(cmdi_record)
+
+        return True
+
+
+class UhelDistributionRightsHolderModifier(AddDistributionRightsHolderModifier):
+    """
+    Add UHEL as distribution rights holder for corpora published by LBF.
+    """
+
+    def __init__(self, affected_identifiers):
+        distribution_rights_holder_str = """
+        <distributionRightsHolderOrganization>
+            <role>distributionRightsHolder</role>
+            <organizationInfo>
+                <organizationName xml:lang="en">University of Helsinki</organizationName>
+                <organizationShortName xml:lang="en">UHEL</organizationShortName>
+                <communicationInfo>
+                    <email>firstname.surname@helsinki.fi</email>
+                </communicationInfo>
+            </organizationInfo>
+        </distributionRightsHolderOrganization>
+        """
+
+        super().__init__(affected_identifiers, distribution_rights_holder_str)
+
+
 class PersonToOrganizationModifier(BaseModifier):
     """
     Modifier that fixes records where an organization is reported as a person.
