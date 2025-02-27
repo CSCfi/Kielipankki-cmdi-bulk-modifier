@@ -19,7 +19,8 @@ class AddDistributionRightsHolderModifier(BaseModifier):
         :param modified_identifiers: Identifiers (e.g. "urn:nbn:fi:lb-123") that specify which
                                      records should be modified. Records whose identifier is not
                                      found in the list are not altered. The identifier is
-                                     assumed to be found in "//cmd:Header/cmd:MdSelfLink/text()".
+                                     assumed to be found in MdSelfLink field in the
+                                     header.
         :type modified_identifiers: list
         :param distribution_rights_holder_str: String representing the XML content to be inserted as
                                                publisher
@@ -81,7 +82,7 @@ class UhelDistributionRightsHolderModifier(AddDistributionRightsHolderModifier):
                 <organizationName xml:lang="en">University of Helsinki</organizationName>
                 <organizationShortName xml:lang="en">UHEL</organizationShortName>
                 <communicationInfo>
-                    <email>firstname.surname@helsinki.fi</email>
+                    <email>fin-clarin@helsinki.fi</email>
                 </communicationInfo>
             </organizationInfo>
         </distributionRightsHolderOrganization>
