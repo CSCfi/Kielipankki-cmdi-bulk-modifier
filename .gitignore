@@ -3,3 +3,4 @@ __pycache__
 conf/*
 !conf/example_*
 originals/*
+data/*
