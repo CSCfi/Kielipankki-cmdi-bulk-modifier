@@ -12,6 +12,7 @@ from modifiers.lb_modifiers import (
     AddOrganizationForPersonModifier,
     FinclarinPersonToOrganizationModifier,
     LanguageBankPersonToOrganizationModifier,
+    AddCreatorFromJsonModifier,
 )
 
 
@@ -55,6 +56,16 @@ def selected_modifiers(click_context):
                         organization_info_str=affiliation["organization_info_str"],
                     )
                 )
+
+    if click_context.params["add_creators_from"]:
+        creator_filename = click_context.params["add_creators_from"]
+        with open(creator_filename, "r") as creator_file:
+            creators = json.loads(creator_file.read())
+            modifiers.append(
+                AddCreatorFromJsonModifier(
+                    creator_dicts=creators,
+                )
+            )
 
     if click_context.params["finclarin_to_organization"]:
         modifiers.append(FinclarinPersonToOrganizationModifier())
@@ -226,6 +237,14 @@ def xml_string_diff(original_record_string, modified_record_string):
     ),
 )
 @click.option(
+    "--add-creators-from",
+    type=click.Path(exists=True),
+    help=(
+        "Path to json file specifying persons/organizations to be added as resource"
+        "creator. See conf/example_creators.json for template."
+    ),
+)
+@click.option(
     "--save-originals-to",
     type=click.Path(
         file_okay=False, dir_okay=True, exists=True, path_type=pathlib.Path
@@ -257,6 +276,7 @@ def update_metadata(
     finclarin_to_organization,
     language_bank_to_organization,
     add_affiliations_from,
+    add_creators_from,
     live_update,
     save_originals_to,
     verbose,
