@@ -1,0 +1,17 @@
+{
+  "urn:nbn:fi:lb-2016042710": {
+    "lyhenne": "acquis-ftb3",
+    "tekija": "{Euroopan komission yhteinen tutkimuskeskus (JRC)}",
+    "author": "{European Commission - Joint Research Centre (JRC)}"
+  },
+  "urn:nbn:fi:lb-000000000": {
+    "lyhenne": "example-corpus",
+    "tekija": "Tiina Tutkija; Kiira Korpuksentekijä",
+    "author": "Tiina Tutkija; Kiira Korpuksentekijä"
+  },
+  "urn:nbn:fi:lb-2019121804": {
+    "lyhenne": "agricola-v1-1-korp",
+    "tekija": "",
+    "author": ""
+  }
+}

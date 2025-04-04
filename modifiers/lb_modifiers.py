@@ -7,6 +7,177 @@ import lxml
 from modifiers.base import BaseModifier
 
 
+class AddCreatorFromJsonModifier(BaseModifier):
+    """
+    Modifier that adds resource creator information based on an input JSON file.
+
+    The expected structure for the JSON file is a dict containing creator information
+    dicts identified by their URN as the key. Each creatir information dict represents
+    one CMDI resource. Only fields "tekija" and "author" are required for this
+    modifier. If the author is an organization, its information should be in curly
+    brackets. If there are more than one author, each person must be separated by a
+    semicolon. Mixing persons and organizations is not supported.
+
+    Example dict:
+    {
+      "urn:nbn:fi:lb-2016042710": {
+        "lyhenne": "acquis-ftb3",
+        "tekija": "{Euroopan komission yhteinen tutkimuskeskus (JRC)}",
+        "author": "{European Commission - Joint Research Centre (JRC)}"
+      },
+      "urn:nbn:fi:lb-000000000": {
+        "lyhenne": "example-corpus",
+        "tekija": "Tiina Tutkija; Kiira Korpuksentekijä",
+        "author": "Tiina Tutkija; Kiira Korpuksentekijä"
+      },
+      "urn:nbn:fi:lb-2019121804": {
+        "lyhenne": "agricola-v1-1-korp",
+        "tekija": "",
+        "author": ""
+      }
+    }
+    """
+
+    def __init__(self, creator_dicts, *args, **kwargs):
+        """
+        :param creator_dicts: Source of author information. See class docstring.
+        :type creator_dicts: list of dicts
+        """
+        self.creator_dicts = creator_dicts
+        super().__init__(*args, **kwargs)
+
+    def _matching_author_dict(self, cmdi_record):
+        """
+        Return the author dict matching the given record.
+
+        Matching is done based on URN. If a matching dict is not found, returns None.
+        """
+
+        identifier = self.elements_matching_xpath(
+            cmdi_record, "oai:metadata/cmd:CMD/cmd:Header/cmd:MdSelfLink/text()"
+        )[0]
+        return self.creator_dicts.get(identifier, None)
+
+    def _organization_element(self, cmdi_record, author_en, author_fi):
+        """
+        Return a ready-to-be-inserted lxml Element for creator info for an organization,
+        or None if one cannot be constructed.
+
+        All organizations are assumed to be contained within curly braces: if opening
+        curly brace is not found, the organization is simply skipped.
+
+        We can only return an organization element when we find an exact match for the
+        organization name exists in the pre-existing metadata, as otherwise we wouldn't
+        be able to populate the communicationInfo element required in our metadata
+        profile.
+        """
+        if (not author_en or not author_en[0] == "{") and (
+            not author_fi or not author_fi[0] == "{"
+        ):
+            return None
+
+        author_en = author_en.strip("{}")
+        author_fi = author_fi.strip("{}")
+
+        condition = (
+            f".//cmd:organizationInfo["
+            f"cmd:organizationName[@xml:lang='en' and text()=\"{author_en}\"]"
+            " or "
+            f"cmd:organizationName[@xml:lang='fi' and text()='{author_fi}']"
+            "]"
+        )
+
+        pre_existing_organization_infos = self.elements_matching_xpath(
+            cmdi_record, condition
+        )
+        if not pre_existing_organization_infos:
+            return None
+
+        organization_element = lxml.etree.fromstring(
+            """
+            <resourceCreatorOrganization xmlns="http://www.clarin.eu/cmd/">
+                <role>resourceCreator</role>
+            </resourceCreatorOrganization>
+            """
+        )
+        organization_element.append(
+            lxml.etree.fromstring(
+                lxml.etree.tostring(pre_existing_organization_infos[0])
+            )
+        )
+        return organization_element
+
+    def _person_element(self, cmdi_record, author_en, author_fi):
+        """
+        Return a ready-to-be-inserted lxml Element for creator info of a person.
+        """
+        # TODO implement
+
+        return None
+
+    def modify(self, cmdi_record):
+        identifier = self.elements_matching_xpath(
+            cmdi_record, "oai:metadata/cmd:CMD/cmd:Header/cmd:MdSelfLink/text()"
+        )[0]
+        author_dict = self.creator_dicts.get(identifier, None)
+        if not author_dict:
+            return False
+
+        pre_existing_resource_creation_info = self.elements_matching_xpath(
+            cmdi_record, ".//cmd:resourceCreationInfo"
+        )
+        if pre_existing_resource_creation_info:
+            print(
+                f"Resource creation info already available for {author_dict['lyhenne']} "
+                f"/ {identifier}, skipping"
+            )
+
+        authors_en = author_dict["author"].split(";")
+        authors_fi = author_dict["tekija"].split(";")
+
+        if len(authors_en) != len(authors_fi):
+            print(
+                f"Different number of authors in Finnish and English for {author_dict['lyhenne']}"
+            )
+            return False
+
+        author_infos = []
+        for author_en, author_fi in zip(authors_en, authors_fi):
+            if not author_en:
+                # empty strings can be skipped right away
+                continue
+
+            organization_info = self._organization_element(
+                cmdi_record, author_en, author_fi
+            )
+            if organization_info is not None:
+                author_infos.append(organization_info)
+            else:
+                person_info = self._person_element(cmdi_record, author_en, author_fi)
+                if person_info is not None:
+                    author_infos.append(person_info)
+
+        if not author_infos:
+            print(f"No authors parsed for {author_dict['lyhenne']}")
+            return False
+
+        resource_creation_info = lxml.etree.fromstring(
+            """
+            <resourceCreationInfo  xmlns="http://www.clarin.eu/cmd/">
+            </resourceCreationInfo>
+            """
+        )
+
+        for author_element in author_infos:
+            resource_creation_info.append(author_element)
+
+        self.elements_matching_xpath(cmdi_record, ".//cmd:resourceInfo")[0].append(
+            resource_creation_info
+        )
+        lxml.etree.indent(cmdi_record)
+        return True
+
+
 class AddDistributionRightsHolderModifier(BaseModifier):
     """
     Modifier that adds a distribution rights holder to a given set of records.
