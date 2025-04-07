@@ -199,7 +199,7 @@ class AddCreatorFromJsonModifier(BaseModifier):
         if len(authors_en) != len(authors_fi):
             print(
                 "Different number of authors in Finnish and English for "
-                f"{author_dict['lyhenne']}",
+                f"{author_dict['lyhenne']} / {identifier}",
                 file=sys.stderr,
             )
             return False
