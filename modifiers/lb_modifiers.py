@@ -204,11 +204,14 @@ class AddCreatorFromJsonModifier(BaseModifier):
             )
             return False
 
+        if not authors_en and not authors_fi:
+            print(
+                f"No author information available for {author_dict['lyhenne']} / {identifier}"
+            )
+            return False
+
         author_infos = []
         for author_en, author_fi in zip(authors_en, authors_fi):
-            if not author_en and not author_fi:
-                # empty strings can be skipped right away
-                continue
 
             organization_info = self._organization_element(
                 cmdi_record, author_en, author_fi
