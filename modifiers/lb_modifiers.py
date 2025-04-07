@@ -3,6 +3,7 @@ Modifiers used with FIN-CLARIN data.
 """
 
 import lxml
+import sys
 
 from modifiers.base import BaseModifier
 
@@ -17,6 +18,11 @@ class AddCreatorFromJsonModifier(BaseModifier):
     modifier. If the author is an organization, its information should be in curly
     brackets. If there are more than one author, each person must be separated by a
     semicolon. Mixing persons and organizations is not supported.
+
+    Creator parsing is a somewhat fuzzy task, so information about persons/organizations
+    that look somehow "off" and thus are not inserted is produced. This is printed to
+    stderr to make it easy to separate these from the diffs of the successfully edited
+    records.
 
     Example dict:
     {
@@ -132,12 +138,15 @@ class AddCreatorFromJsonModifier(BaseModifier):
             elif not author_fi:
                 first_name, last_name = author_en.split()
             else:
-                print(f"Ambiguous author {author_en} / {author_fi} found")
+                print(
+                    f"Ambiguous author {author_en} / {author_fi} found", file=sys.stderr
+                )
                 return None
         except ValueError:
             print(
                 f"Could not determine first/last name split for {author_en} / "
-                f"{author_fi}"
+                f"{author_fi}",
+                file=sys.stderr,
             )
             return None
 
@@ -179,7 +188,8 @@ class AddCreatorFromJsonModifier(BaseModifier):
         if pre_existing_resource_creation_info:
             print(
                 f"Resource creation info already available for {author_dict['lyhenne']} "
-                f"/ {identifier}, skipping"
+                f"/ {identifier}, skipping",
+                file=sys.stderr,
             )
 
         authors_en = author_dict["author"].split(";")
@@ -187,7 +197,9 @@ class AddCreatorFromJsonModifier(BaseModifier):
 
         if len(authors_en) != len(authors_fi):
             print(
-                f"Different number of authors in Finnish and English for {author_dict['lyhenne']}"
+                "Different number of authors in Finnish and English for "
+                f"{author_dict['lyhenne']}",
+                file=sys.stderr,
             )
             return False
 
@@ -211,12 +223,13 @@ class AddCreatorFromJsonModifier(BaseModifier):
 
             print(
                 f"Could not map author {author_fi} / {author_en} for {identifier}, "
-                "skipping the record."
+                "skipping the record.",
+                file=sys.stderr,
             )
             return False
 
         if not author_infos:
-            print(f"No authors parsed for {author_dict['lyhenne']}")
+            print(f"No authors parsed for {author_dict['lyhenne']}", file=sys.stderr)
             return False
 
         resource_creation_info = lxml.etree.fromstring(
