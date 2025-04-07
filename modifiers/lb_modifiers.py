@@ -191,6 +191,7 @@ class AddCreatorFromJsonModifier(BaseModifier):
                 f"/ {identifier}, skipping",
                 file=sys.stderr,
             )
+            return False
 
         authors_en = author_dict["author"].split(";")
         authors_fi = author_dict["tekija"].split(";")
