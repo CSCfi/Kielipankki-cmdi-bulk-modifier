@@ -110,10 +110,60 @@ class AddCreatorFromJsonModifier(BaseModifier):
     def _person_element(self, cmdi_record, author_en, author_fi):
         """
         Return a ready-to-be-inserted lxml Element for creator info of a person.
-        """
-        # TODO implement
 
-        return None
+        All strings that have an opening curly braces in them are assumed to represent
+        an organization and are thus skipped.
+
+        For persons, the source data should contain either one language variant of the
+        name or both of them should be identical. If not, the author is not processed.
+        """
+
+        if "{" in author_en or "{" in author_fi:
+            return None
+
+        author_en = author_en.strip()
+        author_fi = author_fi.strip()
+
+        try:
+            if author_en == author_fi:
+                first_name, last_name = author_en.split()
+            elif not author_en:
+                first_name, last_name = author_fi.split()
+            elif not author_fi:
+                first_name, last_name = author_en.split()
+            else:
+                print(f"Ambiguous author {author_en} / {author_fi} found")
+                return None
+        except ValueError:
+            print(
+                f"Could not determine first/last name split for {author_en} / "
+                f"{author_fi}"
+            )
+            return None
+
+        condition = (
+            f".//cmd:personInfo["
+            f'cmd:givenName[text()="{first_name}"]'
+            " and "
+            f'cmd:surname[text()="{last_name}"]'
+            "]"
+        )
+
+        pre_existing_person_infos = self.elements_matching_xpath(cmdi_record, condition)
+        if not pre_existing_person_infos:
+            return None
+
+        person_element = lxml.etree.fromstring(
+            """
+            <resourceCreatorPerson xmlns="http://www.clarin.eu/cmd/">
+                <role>resourceCreator</role>
+            </resourceCreatorPerson>
+            """
+        )
+        person_element.append(
+            lxml.etree.fromstring(lxml.etree.tostring(pre_existing_person_infos[0]))
+        )
+        return person_element
 
     def modify(self, cmdi_record):
         identifier = self.elements_matching_xpath(
