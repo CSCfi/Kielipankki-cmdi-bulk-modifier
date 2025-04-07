@@ -152,10 +152,18 @@ class AddCreatorFromJsonModifier(BaseModifier):
             )
             if organization_info is not None:
                 author_infos.append(organization_info)
-            else:
-                person_info = self._person_element(cmdi_record, author_en, author_fi)
-                if person_info is not None:
-                    author_infos.append(person_info)
+                continue
+
+            person_info = self._person_element(cmdi_record, author_en, author_fi)
+            if person_info is not None:
+                author_infos.append(person_info)
+                continue
+
+            print(
+                f"Could not map author {author_fi} / {author_en} for {identifier}, "
+                "skipping the record."
+            )
+            return False
 
         if not author_infos:
             print(f"No authors parsed for {author_dict['lyhenne']}")
