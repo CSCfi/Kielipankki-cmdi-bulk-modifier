@@ -232,10 +232,6 @@ class AddCreatorFromJsonModifier(BaseModifier):
             )
             return False
 
-        if not author_infos:
-            print(f"No authors parsed for {author_dict['lyhenne']}", file=sys.stderr)
-            return False
-
         resource_creation_info = lxml.etree.fromstring(
             """
             <resourceCreationInfo  xmlns="http://www.clarin.eu/cmd/">
