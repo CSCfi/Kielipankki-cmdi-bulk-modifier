@@ -143,7 +143,7 @@ class AddCreatorFromJsonModifier(BaseModifier):
 
         author_infos = []
         for author_en, author_fi in zip(authors_en, authors_fi):
-            if not author_en:
+            if not author_en and not author_fi:
                 # empty strings can be skipped right away
                 continue
 
